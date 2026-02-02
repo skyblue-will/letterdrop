@@ -96,7 +96,7 @@ export const WORDS = [
 
 // Get today's puzzle number
 export function getPuzzleNumber(): number {
-  const startDate = new Date('2024-01-01').getTime();
+  const startDate = new Date('2026-02-02').getTime(); // Launch day
   const today = new Date().setHours(0, 0, 0, 0);
   return Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
 }
