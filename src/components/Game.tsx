@@ -22,7 +22,7 @@ import ScoreDisplay from './ScoreDisplay';
 import ResultsModal from './ResultsModal';
 import ModeSelector from './ModeSelector';
 
-const REVEAL_INTERVAL = 2000; // 2 seconds between letter reveals
+const REVEAL_INTERVAL = 3500; // 3.5 seconds between letter reveals
 
 export default function Game() {
   const [mounted, setMounted] = useState(false);
