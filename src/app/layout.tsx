@@ -1,8 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const playfair = Playfair_Display({ 
+  subsets: ["latin"],
+  variable: '--font-playfair',
+});
+
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: '--font-inter',
+});
 
 export const metadata: Metadata = {
   title: "Letterdrop",
@@ -16,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#18181b",
+  themeColor: "#0a0a0a",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -33,7 +41,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className={`${inter.className} bg-zinc-900 text-white antialiased`}>
+      <body className={`${playfair.variable} ${inter.variable} font-sans bg-black text-white antialiased`}>
         {children}
       </body>
     </html>

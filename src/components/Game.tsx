@@ -20,7 +20,7 @@ import ScoreDisplay from './ScoreDisplay';
 import ResultsModal from './ResultsModal';
 import ModeSelector from './ModeSelector';
 
-const REVEAL_INTERVAL = 3500; // 3.5 seconds between letter reveals
+const REVEAL_INTERVAL = 3500;
 
 export default function Game() {
   const [mounted, setMounted] = useState(false);
@@ -32,7 +32,6 @@ export default function Game() {
   const [userInput, setUserInput] = useState('');
   const revealTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize
   useEffect(() => {
     setMounted(true);
     setStats(loadStats());
@@ -46,7 +45,6 @@ export default function Game() {
     }
   }, []);
 
-  // Auto-reveal letters
   useEffect(() => {
     if (!gameState || gameState.gameStatus !== 'playing') return;
     
@@ -54,7 +52,6 @@ export default function Game() {
     if (!currentRound || currentRound.status !== 'revealing') return;
     
     if (currentRound.revealedCount >= 5) {
-      // All letters revealed - mark as timeout/wrong
       setGameState(prev => {
         if (!prev) return prev;
         const newRounds = [...prev.rounds];
@@ -78,7 +75,6 @@ export default function Game() {
         };
         return { ...prev, rounds: newRounds };
       });
-      // Clear user input when new letter reveals (they might need to rethink)
       setUserInput('');
     }, REVEAL_INTERVAL);
 
@@ -89,7 +85,6 @@ export default function Game() {
     };
   }, [gameState]);
 
-  // Handle round completion
   useEffect(() => {
     if (!gameState || gameState.gameStatus !== 'playing') return;
     
@@ -97,10 +92,8 @@ export default function Game() {
     if (!currentRound) return;
     
     if (currentRound.status === 'correct' || currentRound.status === 'wrong' || currentRound.status === 'timeout') {
-      // Wait a moment then move to next round or finish
       const timer = setTimeout(() => {
         if (gameState.currentRound >= 4) {
-          // Game finished
           const totalScore = gameState.rounds.reduce((sum, r) => sum + r.points, 0);
           const finalState = {
             ...gameState,
@@ -114,7 +107,6 @@ export default function Game() {
             setDailyCompleted(true);
           }
           
-          // Update stats
           if (stats) {
             const newStats = updateStats(stats, totalScore, gameState.puzzleNumber, gameState.mode, gameState.rounds);
             setStats(newStats);
@@ -123,7 +115,6 @@ export default function Game() {
           
           setTimeout(() => setShowResults(true), 500);
         } else {
-          // Next round
           setGameState(prev => {
             if (!prev) return prev;
             const newRounds = [...prev.rounds];
@@ -146,7 +137,6 @@ export default function Game() {
     }
   }, [gameState, stats]);
 
-  // Start a new game
   const startGame = useCallback((mode: GameMode) => {
     const puzzleNumber = mode === 'daily' ? getPuzzleNumber() : Math.floor(Math.random() * 10000);
     const words = mode === 'daily' 
@@ -173,20 +163,17 @@ export default function Game() {
     setUserInput('');
   }, []);
 
-  // Handle guess submission
   const handleSubmit = useCallback(() => {
     if (!gameState || gameState.gameStatus !== 'playing') return;
     
     const currentRound = gameState.rounds[gameState.currentRound];
     if (currentRound.status !== 'revealing') return;
     
-    // Build full guess from revealed + user input
     const revealedPart = currentRound.word.slice(0, currentRound.revealedCount);
     const fullGuess = revealedPart + userInput;
     
     if (fullGuess.length !== 5) return;
     
-    // Clear the reveal timer
     if (revealTimerRef.current) {
       clearTimeout(revealTimerRef.current);
     }
@@ -207,15 +194,14 @@ export default function Game() {
     });
     
     if (isCorrect) {
-      const messages = ['🔥 INCREDIBLE!', '⭐ AMAZING!', '✨ GREAT!', '👍 NICE!', '😅 PHEW!'];
-      setToast(messages[currentRound.revealedCount - 1] + ` +${points}`);
+      const messages = ['Incredible', 'Amazing', 'Great', 'Nice', 'Close call'];
+      setToast(`${messages[currentRound.revealedCount - 1]} +${points}`);
     } else {
-      setToast(`❌ It was ${currentRound.word}`);
+      setToast(`${currentRound.word}`);
     }
     setTimeout(() => setToast(null), 1500);
   }, [gameState, userInput]);
 
-  // Share results
   const handleShare = async () => {
     if (!gameState) return;
     
@@ -226,7 +212,7 @@ export default function Game() {
         await navigator.share({ text });
       } else {
         await navigator.clipboard.writeText(text);
-        setToast('Copied to clipboard!');
+        setToast('Copied');
         setTimeout(() => setToast(null), 1500);
       }
     } catch (err) {
@@ -236,8 +222,8 @@ export default function Game() {
 
   if (!mounted) {
     return (
-      <div className="fixed inset-0 bg-zinc-900 flex items-center justify-center">
-        <div className="text-2xl font-bold animate-pulse text-white">Loading...</div>
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-gold-gradient font-display text-2xl animate-pulse">Letterdrop</div>
       </div>
     );
   }
@@ -245,57 +231,57 @@ export default function Game() {
   const currentRound = gameState?.rounds[gameState.currentRound];
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-b from-zinc-900 to-zinc-950 text-white flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-black text-white flex flex-col overflow-hidden texture-noise">
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-zinc-900/50 via-transparent to-zinc-900/80 pointer-events-none" />
+      
       {/* Header */}
-      <header className="py-3 px-4 border-b border-zinc-800">
+      <header className="relative z-10 py-4 px-6">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div className="w-10" />
           <div className="text-center">
-            <h1 className="text-xl font-bold tracking-wider bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-              LETTERDROP
+            <h1 className="font-display text-2xl tracking-wide text-gold-gradient">
+              Letterdrop
             </h1>
-            {stats && (
-              <div className="text-xs text-zinc-500">
-                🔥 {stats.currentStreak} • Best: {stats.bestScore}
+            {stats && stats.currentStreak > 0 && (
+              <div className="text-xs text-zinc-500 tracking-widest uppercase mt-1">
+                {stats.currentStreak} day streak
               </div>
             )}
           </div>
           <button
-            onClick={() => setShowResults(true)}
-            className="p-2 hover:bg-zinc-800 rounded-lg"
+            onClick={() => gameState && setShowResults(true)}
+            className="p-2 text-zinc-500 hover:text-white transition-colors"
             disabled={!gameState}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </button>
         </div>
       </header>
 
-      {/* Mode Selector */}
+      {/* Main Content */}
       {!gameState || gameState.gameStatus === 'finished' ? (
         <ModeSelector 
           onSelectMode={startGame}
           dailyCompleted={dailyCompleted}
+          stats={stats}
         />
       ) : (
         <>
-          {/* Score Display */}
           <ScoreDisplay 
             rounds={gameState.rounds}
             currentRound={gameState.currentRound}
           />
 
-          {/* Main Game Area */}
-          <main className="flex-1 flex flex-col items-center justify-center px-4 gap-6">
+          <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 gap-8">
             {currentRound && (
               <>
-                {/* Round indicator */}
-                <div className="text-sm text-zinc-500">
+                <div className="text-xs tracking-[0.3em] text-zinc-600 uppercase">
                   Round {gameState.currentRound + 1} of 5
                 </div>
 
-                {/* Word Display with inline input */}
                 <WordDisplay 
                   word={currentRound.word}
                   revealedCount={currentRound.revealedCount}
@@ -305,13 +291,14 @@ export default function Game() {
                   onSubmit={handleSubmit}
                 />
 
-                {/* Points indicator */}
                 {currentRound.status === 'revealing' && (
-                  <div className="text-center">
-                    <div className="text-4xl font-bold text-yellow-400">
+                  <div className="text-center animate-fade-in">
+                    <div className="font-display text-5xl text-gold-gradient animate-pulse-gold">
                       {getPointsForReveal(currentRound.revealedCount)}
                     </div>
-                    <div className="text-sm text-zinc-500">points if correct</div>
+                    <div className="text-xs tracking-[0.2em] text-zinc-500 uppercase mt-2">
+                      points available
+                    </div>
                   </div>
                 )}
               </>
@@ -322,9 +309,9 @@ export default function Game() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50">
-          <div className="bg-white text-black px-6 py-3 rounded-xl font-bold shadow-lg animate-bounce">
-            {toast}
+        <div className="fixed top-1/3 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+          <div className="glass-gold px-8 py-4 rounded-2xl">
+            <span className="font-display text-xl text-gold-gradient">{toast}</span>
           </div>
         </div>
       )}

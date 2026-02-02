@@ -1,71 +1,92 @@
 'use client';
 
-import { GameMode } from '@/lib/game';
+import { GameMode, Stats } from '@/lib/game';
 import { getPuzzleNumber } from '@/lib/words';
 
 interface ModeSelectorProps {
   onSelectMode: (mode: GameMode) => void;
   dailyCompleted: boolean;
+  stats: Stats | null;
 }
 
-export default function ModeSelector({ onSelectMode, dailyCompleted }: ModeSelectorProps) {
+export default function ModeSelector({ onSelectMode, dailyCompleted, stats }: ModeSelectorProps) {
   const puzzleNumber = getPuzzleNumber();
   
   return (
-    <main className="flex-1 flex flex-col items-center justify-center px-4 gap-8">
-      {/* Logo / Intro */}
-      <div className="text-center">
-        <h2 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent mb-2">
-          LETTERDROP
+    <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 gap-12 animate-fade-in">
+      {/* Hero */}
+      <div className="text-center space-y-4">
+        <h2 className="font-display text-4xl sm:text-5xl text-gold-gradient">
+          Letterdrop
         </h2>
-        <p className="text-zinc-400 max-w-xs">
-          Watch letters reveal. Guess early for more points. Risk it all or play it safe.
+        <p className="text-zinc-500 text-sm max-w-xs mx-auto leading-relaxed">
+          Letters reveal one by one. Guess early for more points — if you dare.
         </p>
       </div>
 
-      {/* How to play */}
-      <div className="bg-zinc-800/50 rounded-xl p-4 max-w-sm">
-        <h3 className="font-bold text-yellow-400 mb-2">HOW TO PLAY</h3>
-        <ul className="text-sm text-zinc-300 space-y-1">
-          <li>📝 5 words, revealed one letter at a time</li>
-          <li>⚡ Guess early = more points (100→80→60→40→20)</li>
-          <li>❌ Wrong guess = 0 points, word revealed</li>
-          <li>🎯 Max score: 500 points</li>
-        </ul>
-      </div>
+      {/* Stats preview */}
+      {stats && stats.gamesPlayed > 0 && (
+        <div className="flex gap-8 text-center">
+          <div>
+            <div className="font-display text-2xl text-white">{stats.bestScore}</div>
+            <div className="text-xs text-zinc-600 uppercase tracking-widest">Best</div>
+          </div>
+          <div>
+            <div className="font-display text-2xl text-white">{stats.gamesPlayed}</div>
+            <div className="text-xs text-zinc-600 uppercase tracking-widest">Played</div>
+          </div>
+          <div>
+            <div className="font-display text-2xl text-[#D4AF37]">{stats.currentStreak}</div>
+            <div className="text-xs text-zinc-600 uppercase tracking-widest">Streak</div>
+          </div>
+        </div>
+      )}
 
       {/* Mode buttons */}
-      <div className="flex flex-col gap-3 w-full max-w-xs">
+      <div className="flex flex-col gap-4 w-full max-w-xs">
         <button
           onClick={() => onSelectMode('daily')}
           disabled={dailyCompleted}
           className={`
-            py-4 px-6 rounded-xl font-bold text-lg
-            transition-all
+            relative py-5 px-8 rounded-2xl font-display text-lg tracking-wide
+            transition-all duration-300
             ${dailyCompleted 
-              ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
-              : 'bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:scale-105 active:scale-95'
+              ? 'glass text-zinc-600 cursor-not-allowed'
+              : 'glass-gold text-[#D4AF37] hover:scale-[1.02] active:scale-[0.98] animate-glow'
             }
           `}
         >
           {dailyCompleted ? (
-            <span>✓ Daily #{puzzleNumber} Complete</span>
+            <>
+              <span className="opacity-50">Daily Complete</span>
+              <span className="block text-xs text-zinc-700 mt-1">Come back tomorrow</span>
+            </>
           ) : (
-            <span>📅 Daily #{puzzleNumber}</span>
+            <>
+              Daily Challenge
+              <span className="block text-xs text-[#D4AF37]/60 mt-1">№{puzzleNumber}</span>
+            </>
           )}
         </button>
         
         <button
           onClick={() => onSelectMode('practice')}
           className="
-            py-4 px-6 rounded-xl font-bold text-lg
-            bg-zinc-700 text-white
-            hover:bg-zinc-600 hover:scale-105 active:scale-95
-            transition-all
+            py-5 px-8 rounded-2xl font-display text-lg tracking-wide
+            glass text-zinc-400
+            hover:text-white hover:scale-[1.02] active:scale-[0.98]
+            transition-all duration-300
           "
         >
-          🎯 Practice Mode
+          Practice
+          <span className="block text-xs text-zinc-600 mt-1">Unlimited rounds</span>
         </button>
+      </div>
+
+      {/* How to play - minimal */}
+      <div className="text-center text-xs text-zinc-700 max-w-xs space-y-1">
+        <p>5 words · Letters reveal every 3.5s</p>
+        <p>Early guess = more points · Max 500</p>
       </div>
     </main>
   );
