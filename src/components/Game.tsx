@@ -13,11 +13,9 @@ import {
   loadDailyState,
   saveDailyState,
   generateShareText,
-  getDefaultStats,
 } from '@/lib/game';
 import { getPuzzleNumber, getWordsForPuzzle, getRandomWord } from '@/lib/words';
 import WordDisplay from './WordDisplay';
-import GuessInput from './GuessInput';
 import ScoreDisplay from './ScoreDisplay';
 import ResultsModal from './ResultsModal';
 import ModeSelector from './ModeSelector';
@@ -31,6 +29,7 @@ export default function Game() {
   const [showResults, setShowResults] = useState(false);
   const [dailyCompleted, setDailyCompleted] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [userInput, setUserInput] = useState('');
   const revealTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize
@@ -79,6 +78,8 @@ export default function Game() {
         };
         return { ...prev, rounds: newRounds };
       });
+      // Clear user input when new letter reveals (they might need to rethink)
+      setUserInput('');
     }, REVEAL_INTERVAL);
 
     return () => {
@@ -137,6 +138,7 @@ export default function Game() {
               rounds: newRounds,
             };
           });
+          setUserInput('');
         }
       }, 1500);
       
@@ -168,21 +170,28 @@ export default function Game() {
       gameStatus: 'playing',
     });
     setShowResults(false);
+    setUserInput('');
   }, []);
 
-  // Handle guess
-  const handleGuess = useCallback((guess: string) => {
+  // Handle guess submission
+  const handleSubmit = useCallback(() => {
     if (!gameState || gameState.gameStatus !== 'playing') return;
     
     const currentRound = gameState.rounds[gameState.currentRound];
     if (currentRound.status !== 'revealing') return;
+    
+    // Build full guess from revealed + user input
+    const revealedPart = currentRound.word.slice(0, currentRound.revealedCount);
+    const fullGuess = revealedPart + userInput;
+    
+    if (fullGuess.length !== 5) return;
     
     // Clear the reveal timer
     if (revealTimerRef.current) {
       clearTimeout(revealTimerRef.current);
     }
     
-    const isCorrect = guess.toUpperCase() === currentRound.word;
+    const isCorrect = fullGuess.toUpperCase() === currentRound.word;
     const points = isCorrect ? getPointsForReveal(currentRound.revealedCount) : 0;
     
     setGameState(prev => {
@@ -191,20 +200,20 @@ export default function Game() {
       newRounds[prev.currentRound] = {
         ...newRounds[prev.currentRound],
         status: isCorrect ? 'correct' : 'wrong',
-        guess: guess.toUpperCase(),
+        guess: fullGuess.toUpperCase(),
         points,
       };
       return { ...prev, rounds: newRounds };
     });
     
     if (isCorrect) {
-      const messages = ['INCREDIBLE!', 'AMAZING!', 'GREAT!', 'NICE!', 'PHEW!'];
+      const messages = ['🔥 INCREDIBLE!', '⭐ AMAZING!', '✨ GREAT!', '👍 NICE!', '😅 PHEW!'];
       setToast(messages[currentRound.revealedCount - 1] + ` +${points}`);
     } else {
-      setToast(`NOPE! It was ${currentRound.word}`);
+      setToast(`❌ It was ${currentRound.word}`);
     }
     setTimeout(() => setToast(null), 1500);
-  }, [gameState]);
+  }, [gameState, userInput]);
 
   // Share results
   const handleShare = async () => {
@@ -278,7 +287,7 @@ export default function Game() {
           />
 
           {/* Main Game Area */}
-          <main className="flex-1 flex flex-col items-center justify-center px-4 gap-8">
+          <main className="flex-1 flex flex-col items-center justify-center px-4 gap-6">
             {currentRound && (
               <>
                 {/* Round indicator */}
@@ -286,26 +295,24 @@ export default function Game() {
                   Round {gameState.currentRound + 1} of 5
                 </div>
 
-                {/* Word Display */}
+                {/* Word Display with inline input */}
                 <WordDisplay 
                   word={currentRound.word}
                   revealedCount={currentRound.revealedCount}
                   status={currentRound.status}
+                  userInput={userInput}
+                  onInputChange={setUserInput}
+                  onSubmit={handleSubmit}
                 />
 
                 {/* Points indicator */}
                 {currentRound.status === 'revealing' && (
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-yellow-400">
-                      {getPointsForReveal(currentRound.revealedCount)} pts
+                    <div className="text-4xl font-bold text-yellow-400">
+                      {getPointsForReveal(currentRound.revealedCount)}
                     </div>
-                    <div className="text-sm text-zinc-500">if you guess now</div>
+                    <div className="text-sm text-zinc-500">points if correct</div>
                   </div>
-                )}
-
-                {/* Guess Input */}
-                {currentRound.status === 'revealing' && (
-                  <GuessInput onGuess={handleGuess} />
                 )}
               </>
             )}
@@ -315,8 +322,8 @@ export default function Game() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-bounce">
-          <div className="bg-white text-black px-6 py-3 rounded-xl font-bold shadow-lg">
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50">
+          <div className="bg-white text-black px-6 py-3 rounded-xl font-bold shadow-lg animate-bounce">
             {toast}
           </div>
         </div>
