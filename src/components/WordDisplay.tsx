@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { RoundStatus } from '@/lib/game';
 
 interface WordDisplayProps {
@@ -22,33 +22,61 @@ export default function WordDisplay({
 }: WordDisplayProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const letters = word.split('');
+  const remainingLetters = 5 - revealedCount;
   
-  useEffect(() => {
-    if (status === 'revealing') {
-      inputRef.current?.focus();
+  // Keep input focused during gameplay
+  const focusInput = useCallback(() => {
+    if (status === 'revealing' && inputRef.current) {
+      inputRef.current.focus();
     }
-  }, [status, revealedCount]);
+  }, [status]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  useEffect(() => {
+    focusInput();
+  }, [focusInput, revealedCount]);
+
+  // Refocus on any touch/click in the game area
+  useEffect(() => {
     if (status !== 'revealing') return;
     
-    if (e.key === 'Enter' && userInput.length === 5 - revealedCount) {
-      onSubmit();
-      return;
-    }
+    const handleTouch = () => {
+      setTimeout(focusInput, 10);
+    };
     
-    if (e.key === 'Backspace') {
-      onInputChange(userInput.slice(0, -1));
-      return;
-    }
+    document.addEventListener('touchstart', handleTouch);
+    document.addEventListener('click', handleTouch);
     
-    if (/^[a-zA-Z]$/.test(e.key) && userInput.length < 5 - revealedCount) {
-      const newInput = userInput + e.key.toUpperCase();
-      onInputChange(newInput);
+    return () => {
+      document.removeEventListener('touchstart', handleTouch);
+      document.removeEventListener('click', handleTouch);
+    };
+  }, [status, focusInput]);
+
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (status !== 'revealing') return;
+    
+    const value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+    
+    if (value.length <= remainingLetters) {
+      onInputChange(value);
       
-      if (newInput.length === 5 - revealedCount) {
-        setTimeout(() => onSubmit(), 150);
+      // Auto-submit when complete
+      if (value.length === remainingLetters) {
+        setTimeout(() => onSubmit(), 100);
       }
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && userInput.length === remainingLetters) {
+      onSubmit();
+    }
+  };
+
+  // Prevent blur on mobile
+  const handleBlur = () => {
+    if (status === 'revealing') {
+      setTimeout(focusInput, 50);
     }
   };
 
@@ -56,6 +84,7 @@ export default function WordDisplay({
     const isRevealed = index < revealedCount;
     const userLetterIndex = index - revealedCount;
     const hasUserLetter = userLetterIndex >= 0 && userLetterIndex < userInput.length;
+    const isNextEmpty = userLetterIndex === userInput.length;
     
     const base = `
       w-14 h-14 sm:w-16 sm:h-16
@@ -77,6 +106,9 @@ export default function WordDisplay({
     if (hasUserLetter) {
       return `${base} glass text-white border-zinc-500/50`;
     }
+    if (isNextEmpty && status === 'revealing') {
+      return `${base} glass text-zinc-700 border border-[#D4AF37]/30`;
+    }
     return `${base} glass text-zinc-700`;
   };
 
@@ -96,22 +128,43 @@ export default function WordDisplay({
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <input
-        ref={inputRef}
-        type="text"
-        className="opacity-0 absolute -z-10"
-        onKeyDown={handleKeyDown}
-        autoComplete="off"
-        autoCapitalize="characters"
-        value={userInput}
-        onChange={() => {}}
-      />
+      {/* Visible input for mobile - styled to blend in */}
+      {status === 'revealing' && (
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="text"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          value={userInput}
+          onChange={handleInput}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          maxLength={remainingLetters}
+          className="
+            w-full max-w-[280px] sm:max-w-[320px]
+            bg-transparent text-center text-transparent
+            caret-[#D4AF37]
+            text-2xl font-display tracking-[0.5em]
+            outline-none
+            h-0 overflow-hidden
+          "
+          style={{ 
+            position: 'absolute',
+            opacity: 0,
+            pointerEvents: 'auto',
+          }}
+        />
+      )}
       
+      {/* Letter tiles */}
       <div 
         className="flex gap-3 cursor-pointer"
-        onClick={() => inputRef.current?.focus()}
+        onClick={focusInput}
       >
-        {letters.map((letter, i) => (
+        {letters.map((_, i) => (
           <div 
             key={i} 
             className={getLetterStyle(i)}
@@ -122,13 +175,17 @@ export default function WordDisplay({
         ))}
       </div>
 
+      {/* Typing hint */}
       {status === 'revealing' && (
-        <div className="text-xs tracking-[0.2em] text-zinc-600 uppercase">
+        <button 
+          onClick={focusInput}
+          className="text-xs tracking-[0.2em] text-zinc-500 uppercase px-4 py-2 rounded-lg active:bg-zinc-800/50 transition-colors"
+        >
           {userInput.length === 0 
-            ? 'Tap to type' 
-            : `${userInput.length} of ${5 - revealedCount}`
+            ? 'Tap here to type' 
+            : `${userInput.length} of ${remainingLetters}`
           }
-        </div>
+        </button>
       )}
     </div>
   );
