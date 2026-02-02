@@ -23,6 +23,7 @@ export default function WordDisplay({
   const inputRef = useRef<HTMLInputElement>(null);
   const letters = word.split('');
   const remainingLetters = 5 - revealedCount;
+  const canSubmit = userInput.length === remainingLetters;
   
   // Keep input focused during gameplay
   const focusInput = useCallback(() => {
@@ -39,7 +40,9 @@ export default function WordDisplay({
   useEffect(() => {
     if (status !== 'revealing') return;
     
-    const handleTouch = () => {
+    const handleTouch = (e: Event) => {
+      // Don't refocus if tapping the submit button
+      if ((e.target as HTMLElement).closest('[data-submit]')) return;
       setTimeout(focusInput, 10);
     };
     
@@ -59,24 +62,25 @@ export default function WordDisplay({
     
     if (value.length <= remainingLetters) {
       onInputChange(value);
-      
-      // Auto-submit when complete
-      if (value.length === remainingLetters) {
-        setTimeout(() => onSubmit(), 100);
-      }
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && userInput.length === remainingLetters) {
+    if (e.key === 'Enter' && canSubmit) {
       onSubmit();
     }
   };
 
   // Prevent blur on mobile
   const handleBlur = () => {
-    if (status === 'revealing') {
+    if (status === 'revealing' && !canSubmit) {
       setTimeout(focusInput, 50);
+    }
+  };
+
+  const handleSubmitClick = () => {
+    if (canSubmit) {
+      onSubmit();
     }
   };
 
@@ -128,7 +132,7 @@ export default function WordDisplay({
 
   return (
     <div className="flex flex-col items-center gap-6">
-      {/* Visible input for mobile - styled to blend in */}
+      {/* Hidden input for keyboard */}
       {status === 'revealing' && (
         <input
           ref={inputRef}
@@ -175,17 +179,35 @@ export default function WordDisplay({
         ))}
       </div>
 
-      {/* Typing hint */}
+      {/* Submit button / typing hint */}
       {status === 'revealing' && (
-        <button 
-          onClick={focusInput}
-          className="text-xs tracking-[0.2em] text-zinc-500 uppercase px-4 py-2 rounded-lg active:bg-zinc-800/50 transition-colors"
-        >
-          {userInput.length === 0 
-            ? 'Tap here to type' 
-            : `${userInput.length} of ${remainingLetters}`
-          }
-        </button>
+        <div className="h-14 flex items-center justify-center">
+          {canSubmit ? (
+            <button 
+              data-submit
+              onClick={handleSubmitClick}
+              className="
+                px-8 py-3 rounded-xl
+                glass-gold text-[#D4AF37] font-display tracking-wide
+                hover:scale-[1.02] active:scale-[0.98]
+                transition-all duration-200
+                animate-fade-in
+              "
+            >
+              Submit
+            </button>
+          ) : (
+            <button 
+              onClick={focusInput}
+              className="text-xs tracking-[0.2em] text-zinc-500 uppercase px-4 py-2 rounded-lg active:bg-zinc-800/50 transition-colors"
+            >
+              {userInput.length === 0 
+                ? 'Tap to type' 
+                : `${userInput.length} of ${remainingLetters}`
+              }
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
