@@ -1,6 +1,6 @@
 'use client';
 
-import { GameState, Stats } from '@/lib/game';
+import { GameState, Stats, getStreakMilestone } from '@/lib/game';
 
 interface ResultsModalProps {
   isOpen: boolean;
@@ -29,6 +29,8 @@ export default function ResultsModal({
     return 'Keep practicing';
   };
 
+  const streakMilestone = gameState.mode === 'daily' ? getStreakMilestone(stats.currentStreak) : null;
+
   return (
     <div 
       className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-6 animate-fade-in"
@@ -45,6 +47,13 @@ export default function ResultsModal({
           </div>
           <div className="text-zinc-600 text-sm">out of 500</div>
           <div className="font-display text-xl text-white mt-4">{getScoreMessage()}</div>
+          
+          {/* Streak milestone celebration */}
+          {streakMilestone && (
+            <div className="mt-4 glass-gold px-4 py-2 rounded-full inline-block">
+              <span className="text-[#D4AF37] text-sm font-display">{streakMilestone}</span>
+            </div>
+          )}
         </div>
 
         {/* Round breakdown */}
@@ -79,7 +88,7 @@ export default function ResultsModal({
 
         {/* Stats */}
         <div className="p-6 border-b border-white/5">
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-4 gap-3 text-center">
             <div>
               <div className="font-display text-xl text-white">{stats.gamesPlayed}</div>
               <div className="text-xs text-zinc-600 uppercase tracking-widest">Played</div>
@@ -88,9 +97,18 @@ export default function ResultsModal({
               <div className="font-display text-xl text-[#D4AF37]">{stats.bestScore}</div>
               <div className="text-xs text-zinc-600 uppercase tracking-widest">Best</div>
             </div>
-            <div>
-              <div className="font-display text-xl text-white">{stats.currentStreak}</div>
+            <div className="relative">
+              {stats.currentStreak > 0 && (
+                <span className="absolute -top-1 left-1/2 transform -translate-x-1/2 text-sm">🔥</span>
+              )}
+              <div className={`font-display text-xl ${stats.currentStreak > 0 ? 'text-orange-500' : 'text-white'}`}>
+                {stats.currentStreak}
+              </div>
               <div className="text-xs text-zinc-600 uppercase tracking-widest">Streak</div>
+            </div>
+            <div>
+              <div className="font-display text-xl text-zinc-400">{stats.maxStreak}</div>
+              <div className="text-xs text-zinc-600 uppercase tracking-widest">Max</div>
             </div>
           </div>
         </div>

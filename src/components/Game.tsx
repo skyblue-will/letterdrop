@@ -205,7 +205,8 @@ export default function Game() {
   const handleShare = async () => {
     if (!gameState) return;
     
-    const text = generateShareText(gameState.totalScore, gameState.puzzleNumber, gameState.rounds);
+    const streak = gameState.mode === 'daily' && stats ? stats.currentStreak : undefined;
+    const text = generateShareText(gameState.totalScore, gameState.puzzleNumber, gameState.rounds, streak);
     
     try {
       if (navigator.share) {
@@ -244,8 +245,9 @@ export default function Game() {
               Letterdrop
             </h1>
             {stats && stats.currentStreak > 0 && (
-              <div className="text-xs text-zinc-500 tracking-widest uppercase mt-1">
-                {stats.currentStreak} day streak
+              <div className="text-xs text-orange-500 tracking-widest uppercase mt-1 flex items-center justify-center gap-1">
+                <span>🔥</span>
+                <span>{stats.currentStreak} day streak</span>
               </div>
             )}
           </div>

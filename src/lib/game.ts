@@ -151,7 +151,7 @@ export function saveDailyState(state: GameState): void {
 }
 
 // Generate share text
-export function generateShareText(score: number, puzzleNumber: number, rounds: RoundState[]): string {
+export function generateShareText(score: number, puzzleNumber: number, rounds: RoundState[], streak?: number): string {
   const stars = rounds.map(r => {
     if (r.status !== 'correct') return '⬛';
     if (r.revealedCount === 1) return '🌟';
@@ -160,5 +160,50 @@ export function generateShareText(score: number, puzzleNumber: number, rounds: R
     return '💫';
   }).join('');
   
-  return `Letterdrop #${puzzleNumber}\n${score}/500 ${stars}\n\nhttps://letterdrop.vercel.app`;
+  const streakText = streak && streak > 1 ? `\n🔥 ${streak} day streak` : '';
+  
+  return `Letterdrop #${puzzleNumber}\n${score}/500 ${stars}${streakText}\n\nhttps://letterdrop.vercel.app`;
+}
+
+// Check if streak is at risk (hasn't played today but has a streak)
+export function isStreakAtRisk(stats: Stats): boolean {
+  if (!stats.lastPlayedDate || stats.currentStreak === 0) return false;
+  
+  const today = new Date().toISOString().split('T')[0];
+  if (stats.lastPlayedDate === today) return false; // Already played today
+  
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  
+  return stats.lastPlayedDate === yesterdayStr; // Played yesterday, not today = at risk
+}
+
+// Get streak milestone message
+export function getStreakMilestone(streak: number): string | null {
+  const milestones: Record<number, string> = {
+    3: '3 days! You\'re building a habit 🌱',
+    7: 'One week! Unstoppable 🔥',
+    14: 'Two weeks! You\'re hooked 💎',
+    30: 'One month! Legendary status 👑',
+    50: '50 days! Absolute machine 🚀',
+    100: '100 DAYS! You are the game 🏆',
+    365: 'ONE YEAR! Touch grass (tomorrow) 🌍',
+  };
+  return milestones[streak] || null;
+}
+
+// Get guess distribution from rounds
+export function getGuessDistribution(stats: Stats, rounds: RoundState[]): number[] {
+  // Distribution: index 0 = guessed at 1 letter, index 4 = guessed at 5 letters
+  // This is a simplified version - in a full implementation you'd track this in stats
+  const distribution = [0, 0, 0, 0, 0];
+  
+  rounds.forEach(round => {
+    if (round.status === 'correct' && round.revealedCount >= 1 && round.revealedCount <= 5) {
+      distribution[round.revealedCount - 1]++;
+    }
+  });
+  
+  return distribution;
 }

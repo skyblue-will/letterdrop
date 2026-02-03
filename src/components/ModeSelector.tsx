@@ -1,6 +1,6 @@
 'use client';
 
-import { GameMode, Stats } from '@/lib/game';
+import { GameMode, Stats, isStreakAtRisk } from '@/lib/game';
 import { getPuzzleNumber } from '@/lib/words';
 
 interface ModeSelectorProps {
@@ -11,9 +11,22 @@ interface ModeSelectorProps {
 
 export default function ModeSelector({ onSelectMode, dailyCompleted, stats }: ModeSelectorProps) {
   const puzzleNumber = getPuzzleNumber();
+  const streakAtRisk = stats ? isStreakAtRisk(stats) : false;
   
   return (
     <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 gap-12 animate-fade-in">
+      {/* Streak at risk warning */}
+      {streakAtRisk && stats && stats.currentStreak > 0 && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 animate-pulse">
+          <div className="glass-gold px-6 py-3 rounded-full flex items-center gap-2">
+            <span className="text-2xl">🔥</span>
+            <span className="text-[#D4AF37] font-display text-sm">
+              {stats.currentStreak} day streak at risk!
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Hero */}
       <div className="text-center space-y-4">
         <h2 className="font-display text-4xl sm:text-5xl text-gold-gradient">
@@ -35,8 +48,13 @@ export default function ModeSelector({ onSelectMode, dailyCompleted, stats }: Mo
             <div className="font-display text-2xl text-white">{stats.gamesPlayed}</div>
             <div className="text-xs text-zinc-600 uppercase tracking-widest">Played</div>
           </div>
-          <div>
-            <div className="font-display text-2xl text-[#D4AF37]">{stats.currentStreak}</div>
+          <div className="relative">
+            {stats.currentStreak > 0 && (
+              <span className="absolute -top-1 -right-4 text-lg">🔥</span>
+            )}
+            <div className={`font-display text-2xl ${stats.currentStreak > 0 ? 'text-orange-500' : 'text-[#D4AF37]'}`}>
+              {stats.currentStreak}
+            </div>
             <div className="text-xs text-zinc-600 uppercase tracking-widest">Streak</div>
           </div>
         </div>
