@@ -167,6 +167,10 @@ export default function WordDisplay({
       <div 
         className="flex gap-3 cursor-pointer"
         onClick={focusInput}
+        onKeyDown={(e) => e.key === 'Enter' && focusInput()}
+        role="button"
+        tabIndex={0}
+        aria-label="Word puzzle - click to focus input"
       >
         {letters.map((_, i) => (
           <div 

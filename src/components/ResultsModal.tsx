@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { GameState, Stats, getStreakMilestone } from '@/lib/game';
 
 interface ResultsModalProps {
@@ -19,6 +20,18 @@ export default function ResultsModal({
   onShare,
   onPlayAgain,
 }: ResultsModalProps) {
+  // Handle Escape key to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const getScoreMessage = () => {
@@ -33,13 +46,23 @@ export default function ResultsModal({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-6 animate-fade-in"
-      onClick={onClose}
+      className="fixed inset-0 z-50 p-6 animate-fade-in"
     >
-      <div 
-        className="glass rounded-3xl max-w-sm w-full overflow-hidden animate-slide-up"
-        onClick={(e) => e.stopPropagation()}
-      >
+      {/* Backdrop - click to close */}
+      <button
+        className="absolute inset-0 bg-black/90 backdrop-blur-sm w-full h-full cursor-default"
+        onClick={onClose}
+        aria-label="Close results"
+      />
+      
+      {/* Modal content */}
+      <div className="relative h-full flex items-center justify-center pointer-events-none">
+        <div 
+          className="glass rounded-3xl max-w-sm w-full overflow-hidden animate-slide-up pointer-events-auto"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="results-title"
+        >
         {/* Header */}
         <div className="p-8 text-center border-b border-white/5">
           <div className="font-display text-6xl text-gold-gradient mb-2">
@@ -138,6 +161,7 @@ export default function ResultsModal({
           >
             Play Again
           </button>
+        </div>
         </div>
       </div>
     </div>
